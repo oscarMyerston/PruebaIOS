@@ -9,28 +9,61 @@ import XCTest
 @testable import PruebaIOS
 
 class PruebaIOSTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
+  
+  var userDataBuilder: DataBuilder!
+  var userApiService: ApiService!
+  var userViewModel: UserViewModel!
+  
+  override func setUpWithError() throws {
+    self.userDataBuilder = DataBuilder()
+    self.userApiService = ApiService()
+    self.userViewModel = UserViewModel(userModel: self.userApiService)
+  }
+  
+  override func tearDownWithError() throws {
+    self.userViewModel  = nil
+    self.userApiService = nil
+    self.userViewModel  = nil
+  }
+  
+  func test_getUsersWithSuccessFull_ResponseWithZeroUsers() {
+    let users: [User] = []
+    self.userViewModel.getUserFromApi()
+    self.userApiService.fetchSuccess(user: users)
+    XCTAssertTrue(self.userViewModel.users.count == 0)
+  }
+  
+  func test_getUsersWithSuccesFullResponseWithTenUsers() {
+    let users: [User] = self.loadUsers()
+    self.userViewModel.getUserFromApi()
+    self.userApiService.fetchSuccess(user: users)
+    XCTAssertTrue(self.userViewModel.users.count > 10)
+  }
+  
+  func test_getUsersWithFailedResponseWithInternalError() {
+    self.userViewModel.getUserFromApi()
+    self.userApiService.fetchFail(error: .internalError)
+    XCTAssertEqual(self.userViewModel.messageError, "Oops a error ocurred, try later")
+  }
+  
+  func test_getUsersWithFailedResponseWithServerError() {
+    self.userViewModel.getUserFromApi()
+    self.userApiService.fetchFail(error: .serverError)
+    XCTAssertEqual(self.userViewModel.messageError, "No Networking Connected")
+  }
+  
+  func test_getUsersWithFailedResponseWithRequestError() {
+    self.userViewModel.getUserFromApi()
+    self.userApiService.fetchFail(error: .requestError)
+    XCTAssertEqual(userViewModel.messageError, "Oops contact with support")
+  }
+  
+  private func loadUsers() -> [User] {
+    var users: [User] = []
+    _ = (0...10).map({ _ in
+      users.append(self.userDataBuilder.build())
+    })
+    return users
+  }
 }
+
